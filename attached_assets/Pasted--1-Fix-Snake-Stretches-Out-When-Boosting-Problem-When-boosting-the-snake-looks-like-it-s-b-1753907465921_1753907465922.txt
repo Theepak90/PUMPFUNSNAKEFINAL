@@ -1,0 +1,86 @@
+🧵 1. Fix: Snake “Stretches Out” When Boosting
+❌ Problem:
+When boosting, the snake looks like it’s being pulled — segments spread apart.
+
+🎯 Cause:
+You're likely increasing the head’s speed, but the tail isn't keeping up — no extra segments are added to match the faster movement.
+
+✅ Fix:
+When boosting, temporarily increase the density of body segments by skipping fewer pop() calls, or by inserting additional positions between updates.
+
+🧠 Option 1: Insert extra segment points when boosting
+In your game loop:
+
+js
+Copy
+Edit
+if (isBoosting) {
+  // Insert more than one head segment per frame to keep it dense
+  segments.unshift({ x: head.x, y: head.y }); // once...
+  segments.unshift({ x: head.x, y: head.y }); // ...again
+} else {
+  segments.unshift({ x: head.x, y: head.y });
+}
+🧠 Option 2: Reduce segment spacing while boosting
+If you use a segmentSpacing variable (say 4 or 5 px), shrink it while boosting:
+
+js
+Copy
+Edit
+let segmentSpacing = isBoosting ? 3 : 5;
+This keeps the body tightly packed, even when moving faster.
+
+👀 2. Fix: Eyes Should Follow Snake’s Movement, Not the Mouse
+❌ Problem:
+Eyes currently point toward the mouse, which breaks realism when you stop moving the mouse.
+
+✅ Fix:
+Make eyes follow the snake’s movement direction — use currentAngle, which you're already using to move the head.
+
+🎯 Updated Eye Drawing:
+js
+Copy
+Edit
+let eyeOffsetX = Math.cos(currentAngle) * 4;
+let eyeOffsetY = Math.sin(currentAngle) * 4;
+
+// Eye positions (offset left/right slightly)
+let leftEyeX = head.x + Math.cos(currentAngle + 0.5) * 5;
+let leftEyeY = head.y + Math.sin(currentAngle + 0.5) * 5;
+
+let rightEyeX = head.x + Math.cos(currentAngle - 0.5) * 5;
+let rightEyeY = head.y + Math.sin(currentAngle - 0.5) * 5;
+
+// Draw eyes
+ctx.fillStyle = "white";
+ctx.beginPath();
+ctx.arc(leftEyeX, leftEyeY, 3, 0, 2 * Math.PI);
+ctx.fill();
+
+ctx.beginPath();
+ctx.arc(rightEyeX, rightEyeY, 3, 0, 2 * Math.PI);
+ctx.fill();
+
+// Pupils pointing in movement direction
+ctx.fillStyle = "black";
+ctx.beginPath();
+ctx.arc(leftEyeX + eyeOffsetX, leftEyeY + eyeOffsetY, 1, 0, 2 * Math.PI);
+ctx.fill();
+
+ctx.beginPath();
+ctx.arc(rightEyeX + eyeOffsetX, rightEyeY + eyeOffsetY, 1, 0, 2 * Math.PI);
+ctx.fill();
+Now the eyes follow wherever the snake is going, not where the mouse is.
+
+🧠 Final Instructions for Replit AI:
+Fix the snake stretching when boosting by either:
+
+Inserting additional head segments per frame while boosting, OR
+
+Decreasing segmentSpacing when boosting to keep the body dense.
+
+Make the eyes follow the snake’s movement direction, not the mouse.
+
+Use currentAngle (the angle the head is moving) to offset the pupils.
+
+This way, eyes look ahead in the direction of movement.

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Connection Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .test-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .success { border-color: #4CAF50; background-color: #f1f8e9; }
+        .error { border-color: #f44336; background-color: #ffebee; }
+        .info { border-color: #2196F3; background-color: #e3f2fd; }
+        button {
+            background-color: #2196F3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background-color: #1976D2; }
+        button:disabled { background-color: #ccc; cursor: not-allowed; }
+        .log {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            padding: 10px;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .connected { color: #4CAF50; }
+        .disconnected { color: #f44336; }
+        .connecting { color: #ff9800; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 WebSocket Connection Tester</h1>
+        
+        <div class="test-section info">
+            <h3>📊 Connection Status</h3>
+            <div id="status" class="status disconnected">Disconnected</div>
+            <div id="connectionInfo"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>🧪 Test Connections</h3>
+            <button onclick="testConnection('ws://localhost:3000/ws?region=us&room=1', 'Main Server')">
+                Test Main Server (Port 3000)
+            </button>
+            <button onclick="testConnection('ws://localhost:3002/ws?region=us&room=1', 'Standalone Game Server')">
+                Test Standalone Server (Port 3002) ✅
+            </button>
+            <button onclick="testConnection('ws://localhost:3001/ws?region=us&room=1', 'Test Server')">
+                Test Simple Server (Port 3001)
+            </button>
+            <button onclick="testConnection('wss://pumpgames-lkbp.onrender.com/ws?region=us&room=1', 'Production Server')">
+                Test Production Server
+            </button>
+            <button onclick="clearLogs()">Clear Logs</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📨 Send Test Message</h3>
+            <input type="text" id="messageInput" placeholder="Enter message to send" style="width: 300px; padding: 8px;">
+            <button onclick="sendMessage()" id="sendBtn" disabled>Send Message</button>
+        </div>
+
+        <div class="test-section">
+            <h3>📋 Connection Logs</h3>
+            <div id="logs" class="log"></div>
+        </div>
+    </div>
+
+    <script>
+        let ws = null;
+        let currentTest = null;
+
+        function log(message, type = 'info') {
+            const logs = document.getElementById('logs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            logEntry.style.color = type === 'error' ? '#f44336' : type === 'success' ? '#4CAF50' : '#333';
+            logs.appendChild(logEntry);
+            logs.scrollTop = logs.scrollHeight;
+        }
+
+        function updateStatus(status, info = '') {
+            const statusEl = document.getElementById('status');
+            const infoEl = document.getElementById('connectionInfo');
+            
+            statusEl.textContent = status;
+            statusEl.className = 'status ' + status.toLowerCase().replace(' ', '');
+            infoEl.textContent = info;
+        }
+
+        function testConnection(url, name) {
+            log(`🧪 Testing ${name}: ${url}`, 'info');
+            
+            if (ws) {
+                ws.close();
+            }
+
+            updateStatus('Connecting', `Connecting to ${name}...`);
+            document.getElementById('sendBtn').disabled = true;
+
+            try {
+                ws = new WebSocket(url);
+                currentTest = name;
+
+                ws.onopen = function(event) {
+                    log(`✅ ${name} - Connected successfully!`, 'success');
+                    updateStatus('Connected', `${name} - Ready to send messages`);
+                    document.getElementById('sendBtn').disabled = false;
+                };
+
+                ws.onmessage = function(event) {
+                    try {
+                        const data = JSON.parse(event.data);
+                        log(`📨 ${name} - Received: ${JSON.stringify(data, null, 2)}`, 'success');
+                    } catch (e) {
+                        log(`📨 ${name} - Received: ${event.data}`, 'success');
+                    }
+                };
+
+                ws.onclose = function(event) {
+                    log(`🔌 ${name} - Connection closed (code: ${event.code}, reason: ${event.reason})`, 'info');
+                    updateStatus('Disconnected', `${name} - Connection closed`);
+                    document.getElementById('sendBtn').disabled = true;
+                    ws = null;
+                    currentTest = null;
+                };
+
+                ws.onerror = function(error) {
+                    log(`❌ ${name} - Connection failed: ${error.message || 'Unknown error'}`, 'error');
+                    updateStatus('Error', `${name} - Connection failed`);
+                    document.getElementById('sendBtn').disabled = true;
+                };
+
+            } catch (error) {
+                log(`❌ ${name} - Exception: ${error.message}`, 'error');
+                updateStatus('Error', `${name} - Exception occurred`);
+            }
+        }
+
+        function sendMessage() {
+            if (!ws || ws.readyState !== WebSocket.OPEN) {
+                log('❌ No active WebSocket connection', 'error');
+                return;
+            }
+
+            const messageInput = document.getElementById('messageInput');
+            const message = messageInput.value || 'Hello from browser!';
+            
+            try {
+                const testMessage = {
+                    type: 'test',
+                    message: message,
+                    timestamp: new Date().toISOString(),
+                    from: 'browser'
+                };
+                
+                ws.send(JSON.stringify(testMessage));
+                log(`📤 Sent: ${JSON.stringify(testMessage)}`, 'info');
+                messageInput.value = '';
+            } catch (error) {
+                log(`❌ Failed to send message: ${error.message}`, 'error');
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('logs').innerHTML = '';
+        }
+
+        // Allow Enter key to send message
+        document.getElementById('messageInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Initial log
+        log('🔧 WebSocket Connection Tester loaded', 'info');
+        log('📋 Click a test button to check WebSocket connections', 'info');
+    </script>
+</body>
+</html>

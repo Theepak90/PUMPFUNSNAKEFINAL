@@ -1,0 +1,120 @@
+✅ 1. Base Speed & Boost Speed Tuning
+🎯 Behavior:
+Snake moves 50% slower than before by default.
+
+When boosting, moves 50% faster than base.
+
+🛠️ Code Fix:
+js
+Copy
+Edit
+const BASE_SPEED = 1.5;          // 50% of original speed
+const BOOST_MULTIPLIER = 1.5;
+let speed = BASE_SPEED;
+
+if (isBoosting) {
+  speed = BASE_SPEED * BOOST_MULTIPLIER;
+} else {
+  speed = BASE_SPEED;
+}
+✅ 2. Boost Droplets = -0.2 Mass + Drop Food Worth 0.2
+🎯 Behavior:
+Each frame while boosting:
+
+Lose 0.2 mass (i.e. 0.2 segment of length).
+
+Drop a food orb worth exactly 0.2 at the tail position.
+
+🛠️ Code Logic:
+js
+Copy
+Edit
+const BOOST_MASS_LOSS = 0.2;
+
+if (isBoosting && segments.length > 10) {
+  boostCooldown++;
+
+  // Drop food every few frames (e.g. every 5)
+  if (boostCooldown % 5 === 0) {
+    const tail = segments[segments.length - 1];
+    food.push({
+      x: tail.x,
+      y: tail.y,
+      size: 3,
+      mass: 0.2,
+      color: "#f55400"
+    });
+  }
+
+  // Mass loss
+  for (let i = 0; i < BOOST_MASS_LOSS; i++) {
+    if (growthRemaining > 0) growthRemaining--;
+    else segments.pop();
+  }
+}
+✅ 3. Map Food Mass Balancing
+🎯 Behavior:
+Big food = 2 mass
+
+Medium = 1 mass
+
+Small = 0.5 mass
+
+🛠️ Food Spawn Example:
+js
+Copy
+Edit
+function spawnFood(type) {
+  let food = {
+    x: randX(),
+    y: randY(),
+    color: chooseColor(),
+  };
+
+  if (type === "big") {
+    food.mass = 2;
+    food.size = 10;
+  } else if (type === "medium") {
+    food.mass = 1;
+    food.size = 6;
+  } else {
+    food.mass = 0.5;
+    food.size = 4;
+  }
+
+  foodList.push(food);
+}
+Then when you eat:
+
+js
+Copy
+Edit
+growthRemaining += food.mass;
+score += food.mass;
+✅ 4. Food Gravitation Toward Snake
+🎯 Behavior:
+When you're close to food, it gets pulled in toward your head to simulate suction.
+
+🛠️ Code for Gravitation:
+Inside your game loop:
+
+js
+Copy
+Edit
+const suctionRadius = 100;
+const suctionStrength = 0.2;
+
+food.forEach(f => {
+  const dx = snakeHead.x - f.x;
+  const dy = snakeHead.y - f.y;
+  const dist = Math.sqrt(dx*dx + dy*dy);
+
+  if (dist < suctionRadius) {
+    f.x += dx / dist * suctionStrength;
+    f.y += dy / dist * suctionStrength;
+  }
+});
+This pulls nearby food gently toward your head.
+
+🧠 Final Instructions for Replit AI:
+“Reduce the snake's base speed by 50%. When boosting, increase speed by 50% of the base. During boost, drop small food every 5 frames at the tail with mass = 0.2, and remove 0.2 mass from the snake by reducing growthRemaining or popping segments. Set food types to spawn with 0.5 mass (small), 1 (medium), and 2 (big). Finally, make nearby food orbs (within 100px) gravitate slowly toward the snake's head for easier pickup.”

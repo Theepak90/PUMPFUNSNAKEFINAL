@@ -1,0 +1,116 @@
+1. Set Up the Canvas and Game World
+Create a 2D canvas using HTML5 <canvas> and JavaScript.
+
+The map should be larger than the viewport, and the camera should follow the snake’s head.
+
+Use a coordinate system where the snake moves, and the map scrolls accordingly.
+
+2. Snake Object
+Create a Snake class or object with:
+
+segments: an array of x, y positions for the body
+
+length: number of segments (increases with food)
+
+speed: constant speed
+
+direction: vector pointing from the head toward the mouse
+
+radius: controls the thickness of the snake
+
+3. Continuous Movement Toward Mouse
+On every animation frame:
+
+Get mouse coordinates relative to the canvas center.
+
+Calculate the direction vector from the snake’s head to the mouse.
+
+Normalize it and scale it by speed.
+
+Add that vector to the head position.
+
+Shift the segments forward so the body follows the head.
+
+4. Mouse Tracking for Direction
+Use mousemove event to track the mouse position.
+
+Update a global targetMouse variable with x and y.
+
+Always move the snake’s head toward this target.
+
+js
+Copy
+Edit
+canvas.addEventListener('mousemove', (e) => {
+  targetMouse.x = e.clientX;
+  targetMouse.y = e.clientY;
+});
+5. Map Boundaries (Death Barrier)
+Define a rectangular map boundary, e.g., 4000x4000 pixels.
+
+If the snake’s head goes outside the map area:
+
+Trigger a death condition (e.g., reset game, display message).
+
+js
+Copy
+Edit
+if (head.x < 0 || head.x > mapWidth || head.y < 0 || head.y > mapHeight) {
+  gameOver();
+}
+6. Food Balls
+Create multiple food objects with x, y, and size.
+
+Randomly place them across the map.
+
+If the snake’s head is within a certain distance of a food ball:
+
+Remove the food
+
+Add segments to the snake (e.g., +5)
+
+Optionally: play sound or animation
+
+js
+Copy
+Edit
+if (distance(snakeHead, food) < eatDistance) {
+  growSnake(5);
+  removeFood(i);
+}
+7. Snake Growth Logic
+When growing, add segments behind the last segment.
+
+Keep drawing the entire body using the segment array.
+
+8. Camera Follow Snake
+Translate the canvas so the snake's head is always in the center of the screen.
+
+js
+Copy
+Edit
+context.translate(canvas.width/2 - snakeHead.x, canvas.height/2 - snakeHead.y);
+9. Eyes That Follow Mouse
+On the snake’s head, draw two white circles for eyes.
+
+Use Math.atan2 to calculate the angle between the head and the mouse.
+
+Offset black pupils in that angle’s direction to create a “looking” effect.
+
+js
+Copy
+Edit
+let angle = Math.atan2(mouseY - head.y, mouseX - head.x);
+let eyeOffset = 5;
+drawCircle(head.x + eyeOffset * Math.cos(angle),
+           head.y + eyeOffset * Math.sin(angle), pupilSize);
+10. Game Loop
+Use requestAnimationFrame() to continuously update:
+
+Snake movement
+
+Collision detection
+
+Food collection
+
+Redrawing canvas

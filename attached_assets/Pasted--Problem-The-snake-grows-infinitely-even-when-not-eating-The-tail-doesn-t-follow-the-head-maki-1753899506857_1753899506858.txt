@@ -1,0 +1,105 @@
+❌ Problem:
+The snake grows infinitely, even when not eating.
+
+The tail doesn't follow the head, making it look stretched or uncoordinated.
+
+The game isn’t fullscreen.
+
+✅ Fix Instructions for Replit AI Builder:
+🐍 1. Fix: Snake Growing Without Eating
+You're likely adding segments every frame, even without eating food.
+
+✅ Correct behavior:
+
+Only grow when food is collected.
+
+Otherwise, maintain a fixed number of segments (e.g., 100 by default).
+
+🛠️ Code Fix (Pseudocode):
+
+js
+Copy
+Edit
+// In Snake update loop:
+if (!eatingFood) {
+  // Remove the last segment to simulate movement
+  snake.segments.pop();
+}
+// Add a new head position in the front
+snake.segments.unshift(newHeadPosition);
+When food is eaten:
+
+js
+Copy
+Edit
+function eatFood() {
+  // Don't pop the last segment, snake "grows"
+  // Just unshift new head as usual
+}
+🧠 2. Fix: Tail Not Following Head Smoothly
+Your tail is probably just "dragged" or stuck because you're not simulating movement.
+
+✅ Correct approach:
+
+Treat each body segment as following the previous one.
+
+🛠️ Basic Strategy:
+
+Use an array segments, each segment is a coordinate {x, y}
+
+On each frame:
+
+Calculate new head position.
+
+Insert it at the beginning: segments.unshift(newHead)
+
+If not growing: remove last segment: segments.pop()
+
+This makes the body "flow" behind the head.
+
+🖥️ 3. Fix: Make Canvas Fullscreen
+✅ In your HTML and JavaScript:
+
+HTML:
+
+html
+Copy
+Edit
+<canvas id="gameCanvas"></canvas>
+CSS:
+
+css
+Copy
+Edit
+body, html {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+}
+JavaScript:
+
+js
+Copy
+Edit
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+function resizeCanvas() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+}
+window.addEventListener("resize", resizeCanvas);
+resizeCanvas(); // call once on start
+🎁 Bonus: Eye Fix Tip
+If you want the eyes to always look at the mouse:
+
+js
+Copy
+Edit
+let angle = Math.atan2(mouseY - headY, mouseX - headX);
+// use this angle to offset pupils in that direction

@@ -1,0 +1,87 @@
+✅ New Money System (Post-Death Green Square Drops)
+🧠 Core Logic:
+💰 Every snake has a money value (starts at $1.00)
+
+🪦 On death: green squares drop around body path
+
+💵 Each green square = $0.20
+
+🍴 When picked up → increases the money of the collector
+
+❌ Killing someone no longer gives instant money
+
+✅ 1. Drop Money Squares on Death
+In your server or game logic, update the onDeath() function:
+
+js
+Copy
+Edit
+function handleSnakeDeath(snake) {
+  const dropCount = Math.floor(snake.money / 0.2); // $0.20 chunks
+
+  for (let i = 0; i < dropCount; i++) {
+    const seg = snake.segments[Math.floor(i / dropCount * snake.segments.length)];
+
+    spawnMoneyFood({
+      x: seg.x + (Math.random() - 0.5) * 10,
+      y: seg.y + (Math.random() - 0.5) * 10,
+      value: 0.2,
+      type: 'money',
+    });
+  }
+
+  // Reset money
+  snake.money = 0;
+}
+✅ 2. Make Green Squares Visible & Valuable
+When rendering these on canvas:
+
+js
+Copy
+Edit
+if (food.type === 'money') {
+  ctx.fillStyle = '#00ff00'; // green square
+  ctx.fillRect(food.x - 5, food.y - 5, 10, 10); // 10x10 square
+}
+Or if using an image, draw it instead of a square.
+
+✅ 3. Pickup Money Squares to Gain Money
+In your food pickup logic:
+
+js
+Copy
+Edit
+if (food.type === 'money') {
+  snake.money += food.value; // typically 0.2
+}
+Make sure this is the only place money is increased now.
+
+✅ 4. Disable Kill-Based Money Rewards
+Find wherever money is currently added when killing someone, and remove it:
+
+js
+Copy
+Edit
+// Remove this if it exists:
+snake.money += 1.00; // or based on % of killed player’s mass
+✅ Optional Enhancements
+Add a floating $+0.20 text when picking up money
+
+Animate green square rotation or glow
+
+Cap max money if needed
+
+✅ What to Tell Replit AI
+Replace the money system:
+
+On player death, drop green square foods worth $0.20 each (number based on their current money)
+
+Each square should spawn along the body trail or in a random cluster around it
+
+Players earn money only by collecting those green squares
+
+Do not give money for kills anymore
+
+Green squares should be styled clearly (e.g., 10x10 bright green squares)
+
+Picking up one increases the player’s money stat

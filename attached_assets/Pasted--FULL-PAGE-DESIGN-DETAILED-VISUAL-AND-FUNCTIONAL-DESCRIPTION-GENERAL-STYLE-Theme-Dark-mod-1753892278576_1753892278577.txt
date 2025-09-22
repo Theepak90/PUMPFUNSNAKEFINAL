@@ -1,0 +1,293 @@
+🖥️ FULL PAGE DESIGN — DETAILED VISUAL AND FUNCTIONAL DESCRIPTION
+⚙️ GENERAL STYLE
+Theme: Dark mode (Black/dark grey background grid)
+
+Color Palette:
+
+Background: Charcoal black grid (#111 or #0d0d0d)
+
+Accent: Yellow (#FFD700), Green (#00FF88), Electric Blue (#5465FF), and White text
+
+Fonts: Rounded, modern sans-serif (possibly something like Inter, Montserrat, or custom)
+
+UI Layout: 3-column responsive layout, grid-based spacing, neon/high contrast highlights
+
+🔝 TOP OF THE SCREEN (HEADER)
+🔸 Top Bar
+Left:
+
+Pumpkin or mascot emoji
+
+Text: “Welcome, [username]!” → e.g., “Welcome, bobscratch!” in white and yellow bold text
+
+Center (if visible):
+
+A horizontal alert area (red banner for notifications like maintenance mode)
+
+Right:
+
+Coin icon with wallet balance (top-right)
+
+Sound toggle
+
+Settings (gear icon)
+
+Logout button (rounded yellow button)
+
+🧩 MAIN LAYOUT – 3 PANEL STRUCTURE
+◀️ LEFT PANEL (PLAYER INFO)
+🏆 Leaderboard Card
+Black card container with soft rounded edges
+
+Label: “Leaderboard” with a trophy icon (gold)
+
+Live indicator: Green dot + "Live"
+
+Top 3 players listed:
+
+Rank, username, and total earnings (in gold text)
+
+Button at bottom: “View Full Leaderboard” (dark background, white text, subtle border glow on hover)
+
+👥 Friends Card
+Below leaderboard
+
+Title: “Friends” + refresh icon (top right)
+
+Displays friend list (currently shows “No friends… add some!” if empty)
+
+Live status (e.g., “0 playing” badge on right)
+
+Button: “Add Friends”
+
+🟨 CENTER PANEL (CORE GAME INTERACTION)
+This is the most prominent and central area of the screen.
+
+👤 Username Block
+At the top: Yellow icon cube with a number (likely score, currently 0)
+
+Right of cube: Username shown in white inside a black name field with rounded borders (e.g., “bobscratch”)
+
+Small edit icon beside name to allow name changes
+
+💵 Game Amount Buttons
+3 pill-style buttons side-by-side:
+
+$1 (highlighted), $5, $20 – selects game wager (default is $1)
+
+▶️ Start Button
+Large, rectangular button centered below wager buttons
+
+Text: “Play Game” (currently says “MAINTENANCE MODE” but should say “PLAY GAME”)
+
+Black background, white text, bold, bright hover effect
+
+🌍 Region & Lobby Buttons
+Below Play button:
+
+EU region button (default selection)
+
+“Browse Lobbies” button to view/join specific games
+
+These are side-by-side pill buttons, subtle borders
+
+📊 Stats Strip
+Horizontal row at the bottom:
+
+Players in Game: Yellow number (e.g., 18)
+
+Global Player Winnings: Yellow text showing total earned across players (e.g., $38,154)
+
+▶️ RIGHT PANEL (WALLET & SNAKE)
+💼 Wallet Block
+Black card with green accent line
+
+Top: “Wallet” title, two icons (copy address, refresh balance)
+
+Big yellow dollar balance (e.g., $1.26) + smaller SOL amount underneath (e.g., 0.0070 SOL)
+
+Two buttons side by side:
+
+Add Funds (green button, white text)
+
+Cash Out (blue button, white text)
+
+🎨 Customize Snake
+Directly below wallet
+
+Title: “Customize”
+
+Snake preview shown on a black background (2D cartoony style snake with googly eyes)
+
+Button: “Change Appearance” – opens customization options (not shown yet)
+
+🔽 BOTTOM BAR (UTILITY)
+At the bottom center of the screen:
+
+Daily Crate:
+
+Yellow cube icon
+
+“Daily Crate” text inside a dimmed, interactive card
+
+Affiliate (greyed out): Referral system likely disabled for now
+
+🐍 FUNCTIONALITY BEHIND THE UI
+When user clicks “Play Game”:
+
+$1 is deducted from SOL balance
+
+Player is dropped into a Slither.io-style game arena
+
+On killing another snake:
+
+$1 is added to their in-game wallet (reflected in balance)
+
+Leaderboard dynamically updates
+
+All transactions are tied to a crypto wallet (Solana)
+
+✅ TECH STACK SUGGESTIONS
+Frontend: React + TailwindCSS (for quick, modular styling)
+
+Game Engine: WebGL or Phaser.js for real-time multiplayer snake mechanics
+
+Wallet Integration: Phantom Wallet API (Solana)
+
+Backend:
+
+Node.js/Express
+
+WebSocket server for game sync
+
+PostgreSQL or Firebase for player data
+
+Crypto Payments: Smart contracts or backend-controlled wallet pool to manage funds and payouts securely
+Here’s a breakdown of the web app you’re describing and how someone should build it, based on the screenshot and your instructions. The concept is a crypto-based competitive game similar to Slither.io, where:
+
+Players pay $1 to enter a game
+
+Each time a player kills another snake, they earn $1
+
+The platform uses Solana (SOL) as the currency backend
+
+🔧 OVERVIEW – WHAT TO BUILD
+Game Title: DAMNBRUH – Skill-Based Betting
+
+Core Concept:
+A browser-based real-time multiplayer snake game like Slither.io, integrated with crypto betting:
+
+Entry fee: $1 in SOL
+
+Earn $1 (in SOL) per enemy kill
+
+Crypto wallet integration (SOL)
+
+Real-time leaderboard & stats
+
+🧩 UI COMPONENTS & LAYOUT
+1. Header
+User Greeting: "Welcome, [username]" (top-left)
+
+User Wallet & Settings (top-right):
+
+SOL Balance
+
+Sound toggle
+
+Settings (gear icon)
+
+Logout button
+
+2. Center Panel (Game Panel)
+Username display (e.g. “bobscratch”)
+
+Bet amount selector: $1, $5, $20 buttons (but game always costs $1 to enter in your case)
+
+Play Button (disabled if game inactive): Shows "MAINTENANCE MODE" now, but should say "Play Game" normally
+
+Region Selector: (e.g., EU)
+
+Lobbies Button: To browse public/private game lobbies
+
+Live Player Count & Total Winnings:
+
+Players in Game: X
+
+Global Player Winnings: $Y
+
+3. Left Panel
+🏆 Leaderboard (Live)
+
+Top 3 Players (name + earnings)
+
+Button: “View Full Leaderboard”
+
+👥 Friends
+
+“Add Friends” button
+
+Status showing who is online/playing
+
+4. Right Panel
+💼 Wallet
+
+SOL address (copyable)
+
+Balance in both USD and SOL
+
+Buttons:
+
+“Add Funds”
+
+“Cash Out”
+
+🎨 Customize Snake
+
+Visual preview of current snake skin
+
+“Change Appearance” button
+
+5. Footer/Bottom Options
+Daily Crate (possibly for bonuses or free SOL)
+
+Affiliate System (earn via referrals, currently disabled)
+
+🧠 Backend & Tech Suggestions
+Blockchain Integration:
+Currency: Solana (SOL)
+
+Use a phantom wallet or Solana-compatible Web3 wallet for transactions
+
+Backend logic to handle:
+
+Entry fee on game start
+
+Distributing winnings upon kills
+
+Cashing out to wallet
+
+Game Engine:
+Use WebGL or Three.js for the snake game visuals
+
+Real-time multiplayer via Socket.io or WebRTC
+
+Server authoritative logic to track kills and assign rewards
+
+Database:
+Player accounts, stats, leaderboard, friends
+
+Real-time updates and analytics
+
+Firebase or Supabase for simplicity
+
+✅ MUST-HAVE FEATURES
+Feature	Description
+Crypto Wallet Integration	For funding, playing, and rewards
+Game Matching System	Join lobby or match automatically
+Kill = $1 Reward Logic	Every time a snake dies by you, you earn $1
+Entry Fee Enforcement	Must have $1 to play
+Live Leaderboard	Global rankings by total earnings
+Customization	Change snake skin
+Friends System	Add/see friends, maybe team lobbies
+Anti-cheat Mechanisms	Prevent bots or exploiters

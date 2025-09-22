@@ -1,0 +1,78 @@
+✅ GOAL:
+Slight overlap between the balls (like in Slither.io).
+
+Ensure the front (head) ball is always drawn on top of the body.
+
+🧠 Fix #1: Slight Overlap Between Balls
+You can do this by reducing the spacing just below the segment diameter.
+
+If you're using:
+
+js
+Copy
+Edit
+const SEGMENT_RADIUS = 10;      // So diameter is 20px
+Then adjust:
+
+js
+Copy
+Edit
+const SEGMENT_SPACING = 18;     // ~10% overlap
+This gives a 2px overlap, which creates the illusion of a smooth connected worm, without gaps.
+
+Feel free to tweak this overlap more (e.g. SEGMENT_SPACING = 17) depending on what looks best.
+
+🧠 Fix #2: Draw Head Last (On Top)
+Right now, you're looping through segments like this:
+
+js
+Copy
+Edit
+for (let i = visibleSegments.length - 1; i > 0; i--) {
+  drawSegment(visibleSegments[i]);
+}
+drawHead(visibleSegments[0]);
+That’s great — just make sure drawHead() comes after the body rendering to always appear on top.
+
+✅ Updated drawSnake() (Final Version):
+js
+Copy
+Edit
+function drawSnake() {
+  // Draw tail to front (excluding head)
+  for (let i = visibleSegments.length - 1; i > 0; i--) {
+    const seg = visibleSegments[i];
+
+    const gradient = ctx.createRadialGradient(seg.x, seg.y, 0, seg.x, seg.y, SEGMENT_RADIUS);
+    gradient.addColorStop(0, "#ffbaba");
+    gradient.addColorStop(1, "#d55400");
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(seg.x, seg.y, SEGMENT_RADIUS, 0, 2 * Math.PI);
+    ctx.fill();
+  }
+
+  // Draw head on top
+  const headSeg = visibleSegments[0];
+  const headGradient = ctx.createRadialGradient(headSeg.x, headSeg.y, 0, headSeg.x, headSeg.y, SEGMENT_RADIUS);
+  headGradient.addColorStop(0, "#ffffff");
+  headGradient.addColorStop(1, "#d55400");
+
+  ctx.fillStyle = headGradient;
+  ctx.beginPath();
+  ctx.arc(headSeg.x, headSeg.y, SEGMENT_RADIUS, 0, 2 * Math.PI);
+  ctx.fill();
+
+  drawEyes(headSeg.x, headSeg.y, currentAngle);
+}
+✅ Final Instructions for Replit AI:
+Set SEGMENT_SPACING = 18 if SEGMENT_RADIUS = 10, to create a small overlap between body balls.
+
+When drawing the snake:
+
+Render the body segments first (from tail to just before the head).
+
+Then draw the head segment last, so it always appears on top of the rest.
+
+Ensure ctx.arc(...); ctx.fill() is used with a radial gradient for each segment.

@@ -1,0 +1,207 @@
+🧠 Goal: Realistic Bot Movement
+Bots should behave like real players:
+
+Wander smoothly, not spin in circles
+
+Chase nearby food
+
+Avoid other snakes
+
+Occasionally boost or roam
+
+Drop mass on death
+
+🧩 1. Bot States: Simulated Behavior
+Each bot has a behavior state like:
+
+State	What It Does
+Wander	Roams randomly in open space
+Food Hunt	Seeks and eats nearby food
+Avoid	Turns away from close players or danger
+Aggro (optional)	Follows smaller players (like predators)
+Circle	Occasionally arcs in loops (like camping food)
+
+Bots should switch states based on what's around them.
+
+🔁 2. Smooth, Player-Like Turning
+Update bot angle using smooth turning:
+
+js
+Copy
+Edit
+bot.angle += (targetAngle - bot.angle) * turnSpeed;
+Where:
+
+turnSpeed is something like 0.1 (slow and smooth)
+
+Prevents snapping or spinning
+
+Then update position:
+
+js
+Copy
+Edit
+bot.x += Math.cos(bot.angle) * bot.speed;
+bot.y += Math.sin(bot.angle) * bot.speed;
+✅ Smooth drifting, like players in Slither.io.
+
+🥣 3. Food Attraction
+When in "Food Hunt":
+
+Scan for the nearest visible food
+
+Lock onto it if within radius (e.g. 400px)
+
+Move toward it
+
+js
+Copy
+Edit
+function findClosestFood(bot, foodList) {
+  let closest = null;
+  let minDist = Infinity;
+  for (const food of foodList) {
+    const dx = food.x - bot.x;
+    const dy = food.y - bot.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < minDist) {
+      closest = food;
+      minDist = dist;
+    }
+  }
+  return closest;
+}
+Then set targetAngle = angleTo(closestFood).
+
+🧨 4. Collision Avoidance
+If another snake is:
+
+In front of the bot
+
+And close (within ~150px)
+
+Then switch to Avoid state:
+
+Calculate a turn-away angle
+
+Temporarily stop chasing food
+
+js
+Copy
+Edit
+function avoidDanger(bot, snakes) {
+  for (const snake of snakes) {
+    if (snake === bot) continue;
+    const dx = snake.x - bot.x;
+    const dy = snake.y - bot.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < 150) {
+      bot.targetAngle = angleAwayFrom(dx, dy);
+      bot.state = "Avoid";
+      return;
+    }
+  }
+}
+🔄 5. Wandering
+When no food or danger:
+
+Every 2–4 seconds, pick a new random angle
+
+Slowly turn toward it
+
+js
+Copy
+Edit
+if (Date.now() - bot.lastWanderTime > 2500) {
+  bot.wanderAngle = Math.random() * Math.PI * 2;
+  bot.lastWanderTime = Date.now();
+}
+bot.angle += (bot.wanderAngle - bot.angle) * 0.02;
+✅ Creates natural-looking roaming.
+
+🚀 6. Boost Logic
+Bots should occasionally boost when:
+
+Near food
+
+Fleeing another player
+
+Example:
+
+js
+Copy
+Edit
+if (bot.state === "FoodHunt" && Math.random() < 0.01) {
+  bot.isBoosting = true;
+  bot.boostTime = Date.now();
+}
+
+if (bot.isBoosting && Date.now() - bot.boostTime > 1000) {
+  bot.isBoosting = false;
+}
+Adjust speed when isBoosting is true.
+
+💀 7. Death Drop
+When a bot dies:
+
+Drop mass (orange balls)
+
+Drop money crates if applicable
+
+Respawn after delay
+
+Spread mass along previous segments with slight randomness.
+
+🧠 8. Behavior Switching
+Use a simple state machine:
+
+js
+Copy
+Edit
+switch (bot.state) {
+  case "Wander":
+    wander();
+    if (seeFoodNearby()) bot.state = "FoodHunt";
+    break;
+  case "FoodHunt":
+    chaseFood();
+    if (tooCloseToSnake()) bot.state = "Avoid";
+    break;
+  case "Avoid":
+    runAway();
+    if (safeNow()) bot.state = "Wander";
+    break;
+}
+✅ Adds variety and realism.
+
+✅ What to Tell Replit AI (Copy This)
+Make the bots behave like real Slither.io players:
+
+Each bot should have a state like Wander, FoodHunt, or Avoid
+
+In Wander, pick a new random angle every few seconds and slowly turn toward it
+
+In FoodHunt, chase the nearest food within 400px by setting angle toward it
+
+In Avoid, if another snake is within 150px, turn away from it
+
+Boost occasionally if chasing food or avoiding players
+
+Smooth the turning using angle interpolation:
+
+js
+Copy
+Edit
+bot.angle += (targetAngle - bot.angle) * 0.1;
+Update position each frame with:
+
+js
+Copy
+Edit
+bot.x += Math.cos(bot.angle) * bot.speed;
+bot.y += Math.sin(bot.angle) * bot.speed;
+Do not make bots spin randomly or tightly
+
+When a bot dies, drop mass along its segments like a player
+
+No need to handle eyes — they are already working

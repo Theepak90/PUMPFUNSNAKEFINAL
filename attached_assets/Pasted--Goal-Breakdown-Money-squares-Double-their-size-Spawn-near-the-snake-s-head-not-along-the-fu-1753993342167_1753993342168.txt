@@ -1,0 +1,107 @@
+✅ Goal Breakdown
+💵 Money squares:
+
+Double their size
+
+Spawn near the snake’s head, not along the full body
+
+💀 On death:
+
+Drop regular food balls in the snake’s color
+
+Drops equal to the snake's mass
+
+🐍 Growth:
+
+Snake now grows 1 segment per 2 mass (i.e., 1 mass = 0.5 segments)
+
+🧠 Step-by-Step Implementation
+🔷 1. 💵 Double-size green money squares near head
+In your death function:
+js
+Copy
+Edit
+const dropMoneySquares = (snake) => {
+  const squareValue = 0.2;
+  const count = Math.floor(snake.money / squareValue);
+
+  for (let i = 0; i < count; i++) {
+    spawnFood({
+      x: snake.head.x + (Math.random() - 0.5) * 20,
+      y: snake.head.y + (Math.random() - 0.5) * 20,
+      value: squareValue,
+      type: 'money',
+      size: 20, // double the previous size (10x10 becomes 20x20)
+    });
+  }
+  snake.money = 0;
+};
+And render like this:
+js
+Copy
+Edit
+if (food.type === 'money') {
+  ctx.fillStyle = '#00ff00';
+  ctx.fillRect(food.x - 10, food.y - 10, 20, 20);
+}
+🔴 2. Drop regular food (snake color) on death
+In your death function:
+
+js
+Copy
+Edit
+const dropDeathFood = (snake) => {
+  const count = Math.floor(snake.mass); // 1 food per mass
+
+  for (let i = 0; i < count; i++) {
+    const seg = snake.segments[Math.floor(i / count * snake.segments.length)];
+
+    spawnFood({
+      x: seg.x + (Math.random() - 0.5) * 8,
+      y: seg.y + (Math.random() - 0.5) * 8,
+      value: 1,
+      color: snake.color,
+      type: 'mass',
+    });
+  }
+};
+In drawFood():
+
+js
+Copy
+Edit
+if (food.type === 'mass') {
+  ctx.fillStyle = food.color || '#d55400';
+  ctx.beginPath();
+  ctx.arc(food.x, food.y, 7, 0, Math.PI * 2);
+  ctx.fill();
+}
+📈 3. 1 mass = 0.5 segments
+Change the logic where the snake gains length:
+
+js
+Copy
+Edit
+// Instead of 1 mass = 1 segment:
+snake.growthRemaining += food.value * 0.5;
+Then in your update loop:
+
+js
+Copy
+Edit
+while (snake.growthRemaining >= 1) {
+  addSegmentToSnake(snake);
+  snake.growthRemaining -= 1;
+}
+✅ What to Tell Replit
+Make green money squares 20×20px instead of 10×10
+
+They should spawn near the snake's head on death, not along the body
+
+When a snake dies, drop regular mass food in the snake’s body color
+
+The number of food balls dropped = snake's mass
+
+Each mass = 0.5 segments (so snake gains 1 segment per 2 mass)
+
+Regular food is still round, but money is a square

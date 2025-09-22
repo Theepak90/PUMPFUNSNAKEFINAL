@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Socket.IO Test</title>
+    <script src="https://cdn.socket.io/4.8.1/socket.io.min.js"></script>
+</head>
+<body>
+    <h1>Socket.IO Connection Test</h1>
+    <div id="status">Connecting...</div>
+    <div id="messages"></div>
+
+    <script>
+        const socket = io("http://localhost:5174", {
+            path: "/socket.io",
+            query: {
+                region: "us",
+                room: "1",
+            },
+        });
+
+        socket.on("connect", () => {
+            console.log("✅ Connected to Socket.IO server", socket.id);
+            document.getElementById('status').textContent = `Connected! Socket ID: ${socket.id}`;
+        });
+
+        socket.on("online-users", (users) => {
+            console.log("Online users:", users);
+            document.getElementById('messages').innerHTML += `<p>Online users: ${users.join(', ')}</p>`;
+        });
+
+        socket.on("disconnect", () => {
+            console.log("❌ Disconnected from server");
+            document.getElementById('status').textContent = "Disconnected";
+        });
+
+        socket.on("connect_error", (error) => {
+            console.error("❌ Connection error:", error);
+            document.getElementById('status').textContent = `Connection Error: ${error.message}`;
+        });
+    </script>
+</body>
+</html>

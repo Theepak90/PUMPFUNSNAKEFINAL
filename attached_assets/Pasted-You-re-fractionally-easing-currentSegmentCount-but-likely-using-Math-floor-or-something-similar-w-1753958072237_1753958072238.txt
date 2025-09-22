@@ -1,0 +1,52 @@
+You're fractionally easing currentSegmentCount, but likely using Math.floor() or something similar when rendering segments — which causes the last tail segment to flicker as the count hovers near an integer.
+
+Let’s fix this cleanly.
+
+✅ Final Smooth Growth/Loss Fix (No Flickering):
+We’ll do this in two parts:
+
+🔧 PART 1: Use an integer renderSegmentCount, but round once per frame
+Instead of re-calculating how many segments to show during interpolation, round once and stick with that number.
+
+js
+Copy
+Edit
+let currentSegmentCount = INITIAL_SEGMENT_COUNT;
+
+function updateSegmentCount() {
+  const target = Math.floor(totalMass / MASS_PER_SEGMENT);
+  if (currentSegmentCount < target) {
+    currentSegmentCount += 0.2; // smooth grow
+  } else if (currentSegmentCount > target) {
+    currentSegmentCount -= 0.2; // smooth shrink
+  }
+}
+✅ currentSegmentCount is a float.
+
+🔧 PART 2: Interpolate exactly the number of segments from the trail
+js
+Copy
+Edit
+const renderSegmentCount = Math.round(currentSegmentCount);
+const visibleSegments = getInterpolatedSegments(segmentTrail, renderSegmentCount);
+You only round once — not inside your loop.
+
+🔧 PART 3: Add logic to getInterpolatedSegments that avoids flickering:
+Ensure your interpolation loop:
+
+Samples consistent spacing
+
+Never skips or duplicates the same point when segmentCount changes by 1
+
+✅ This ensures that one segment is added or removed only after enough easing distance, not by rapidly toggling around the threshold.
+
+✅ Final Instructions for Replit AI:
+Fix segment flickering and choppy growth/shrink by implementing smooth easing of segment count:
+
+Use a currentSegmentCount (float) that eases toward targetSegmentCount (based on mass).
+
+Only Math.round(currentSegmentCount) once per frame and pass that value to your segment rendering logic.
+
+Do not allow segment count to toggle back and forth each frame. This avoids flickering at the tail.
+
+Ensure new segments appear naturally by extending the tail only when the currentSegmentCount crosses an integer boundary.
