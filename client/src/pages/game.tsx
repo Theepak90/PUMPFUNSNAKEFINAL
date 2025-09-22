@@ -433,7 +433,7 @@ class SmoothSnake {
     this.head = { x, y };
     this.currentAngle = 0;
     this.turnSpeed = 0.12; // Increased for more responsive turning
-    this.baseSpeed = 4.5; // Increased for much faster, smoother movement
+    this.baseSpeed = 2.5; // Reduced speed for better gameplay
     this.boostMultiplier = 1.62;
     this.speed = this.baseSpeed;
     this.isBoosting = false;
@@ -619,6 +619,7 @@ class SmoothSnake {
 
   applyBoost() {
     if (this.isBoosting && this.totalMass > this.MIN_MASS_TO_BOOST) {
+      // BOOST: Speed increases to baseSpeed * boostMultiplier
       this.speed = this.baseSpeed * this.boostMultiplier;
       this.boostCooldown++;
 
@@ -661,6 +662,7 @@ class SmoothSnake {
         this.onDropFood?.(boostFood);
       }
     } else {
+      // NORMAL: Speed remains constant at baseSpeed throughout the game
       this.speed = this.baseSpeed;
       this.isBoosting = false;
     }
@@ -674,13 +676,7 @@ class SmoothSnake {
     // Increment foods eaten counter
     this.foodsEaten++;
     
-    // Give money reward every 40 foods eaten
-    if (this.foodsEaten % 40 === 0 && this.foodsEaten > 0) {
-      const moneyReward = 0.5; // $0.5 reward every 40 foods
-      this.money += moneyReward;
-      console.log(`💰 Food reward! Ate ${this.foodsEaten} foods total, earned $${moneyReward.toFixed(2)}! Total money: $${this.money.toFixed(2)}`);
-    }
-    
+    // NO MONEY REWARD for eating food - money only comes from killing snakes
     console.log(`Snake ate food worth ${foodMass} mass (3x = ${foodMass * 3}), growth remaining: ${this.growthRemaining}, foods eaten: ${this.foodsEaten}`);
   }
 
@@ -939,6 +935,7 @@ export default function GamePage() {
   const qKeyPressedRef = useRef(false);
   const cashingOutRef = useRef(false);
   const cashOutStartTimeRef = useRef<number | null>(null);
+  const cashOutProgressRef = useRef(0); // Add ref for direct progress access
 
   const lastSentPositionRef = useRef<{ x: number; y: number; segmentCount: number } | null>(null);
   const [otherPlayers, setOtherPlayers] = useState<Array<{
@@ -1014,10 +1011,8 @@ export default function GamePage() {
     }
 
     try {
-      // Calculate winnings based on final mass and time
-      // Simple multiplier: 0.5x to 5x based on performance
-      const baseMultiplier = Math.min(5, Math.max(0.5, (finalMass / 10) * (timeAlive / 60)));
-      const winnings = currentBetAmount * baseMultiplier;
+      // Fixed winnings - no multiplier system
+      const winnings = currentBetAmount; // Return bet amount only
 
       console.log(`🎯 Game Result - Mass: ${finalMass}, Time: ${timeAlive}s, Bet: $${currentBetAmount}, Winnings: $${winnings.toFixed(2)}`);
 
@@ -1203,22 +1198,12 @@ export default function GamePage() {
     let cameraX = snake.head.x;
     let cameraY = snake.head.y;
     
-    // Apply world boundary constraints to camera
-    const halfScreenWidth = (canvasSize.width / 2) / zoom;
-    const halfScreenHeight = (canvasSize.height / 2) / zoom;
-    
-    const maxCameraX = mapCenterX + mapRadius - halfScreenWidth;
-    const minCameraX = mapCenterX - mapRadius + halfScreenWidth;
-    const maxCameraY = mapCenterY + mapRadius - halfScreenHeight;
-    const minCameraY = mapCenterY - mapRadius + halfScreenHeight;
-    
-    cameraX = Math.max(minCameraX, Math.min(maxCameraX, cameraX));
-    cameraY = Math.max(minCameraY, Math.min(maxCameraY, cameraY));
+    // Camera follows snake perfectly - no constraints for consistent control feel
     
     // Apply camera transform: Center + Zoom + Offset
     bgCtx.translate(canvasSize.width / 2, canvasSize.height / 2);  // Center camera on screen
     bgCtx.scale(zoom, zoom);                                        // Apply zoom level
-    bgCtx.translate(-cameraX, -cameraY);                           // Follow snake (with boundary limits)
+    bgCtx.translate(-cameraX, -cameraY);                           // Follow snake perfectly
 
     if (backgroundImage) {
       // Create tiled pattern for infinite background effect
@@ -2011,6 +1996,7 @@ export default function GamePage() {
         });
         setQKeyPressed(true);
         qKeyPressedRef.current = true;
+        console.log('Q KEY PRESSED - Starting cashout');
         if (!cashingOutRef.current) {
           // Start cash-out process only if Q is pressed
           const startTime = Date.now();
@@ -2053,7 +2039,7 @@ export default function GamePage() {
 
       // Handle Q key release separately
       if (e.key.toLowerCase() === 'q' || e.code === 'KeyQ') {
-        console.log('Q key released - cancelling cash out');
+        console.log('Q KEY RELEASED - Cancelling cashout');
         setQKeyPressed(false);
         qKeyPressedRef.current = false;
         // Cancel cash-out process when Q is released
@@ -2353,10 +2339,15 @@ export default function GamePage() {
       // Update cash-out progress - only if Q is still being held
       if (cashingOutRef.current && cashOutStartTimeRef.current && qKeyPressedRef.current) {
         const elapsed = currentTime - cashOutStartTimeRef.current;
-        const progress = Math.min(elapsed / 3000, 1); // 3 seconds = 100%
+        const rawProgress = elapsed / 3000; // 3 seconds = 100%
+        const progress = Math.min(rawProgress, 1);
+        
+        // Always update both state and ref for maximum responsiveness
         setCashOutProgress(progress);
+        cashOutProgressRef.current = progress;
 
-        console.log(`Cash out progress: ${(progress * 100).toFixed(1)}% (${elapsed}ms elapsed)`);
+        // Debug logging to see what's happening
+        console.log(`CASHOUT: Progress: ${(progress * 100).toFixed(1)}%, Elapsed: ${elapsed}ms, Raw: ${rawProgress.toFixed(3)}`);
 
         // Send cash-out progress to other players every frame for smooth updates
         if (socketRef.current && socketRef.current.connected) {
@@ -2545,21 +2536,9 @@ export default function GamePage() {
 
           if (distToSnake < FOOD_CONSUMPTION_RADIUS) {
             // Handle different types of food
-            if (food.isMoneyCrate && food.moneyValue) {
-              // Snake eats money crate - add both money AND mass from dead snake
-              snake.money += food.moneyValue;
-              const massGain = 0.3; // Same mass gain as regular food particles
-              snake.eatFood(massGain);
-              console.log(`💰 Collected money crate worth $${food.moneyValue} + ${massGain} mass! Total money: $${snake.money.toFixed(2)}`);
-
-              // Notify server about money crate collection for multiplayer sync
-              if (socketRef.current && socketRef.current.connected) {
-                socketRef.current.emit('moneyCrateCollected', {
-                  type: 'moneyCrateCollected',
-                  crateId: food.id
-                });
-                console.log(`💰 Notified server about collecting money crate ${food.id}`);
-              }
+            // Money crates removed - money only comes from killing other snakes
+            if (false) { // Disabled money crate collection
+              // This block is disabled - money only comes from killing snakes
             } else {
               // Regular food, boost food, or super food - add mass
               snake.eatFood(food.mass);
@@ -2615,8 +2594,7 @@ export default function GamePage() {
           timeAlive: timeAlive
         }));
 
-        // Drop money crates before clearing snake
-        dropMoneyCrates(snake.money, snake.totalMass);
+        // Money crates removed - money only comes from killing other snakes
 
         // Hide snake first, then clear data
         snakeVisibleRef.current = false;
@@ -2676,8 +2654,7 @@ export default function GamePage() {
               timeAlive: timeAlive
             }));
 
-            // Drop money crates before clearing snake
-            dropMoneyCrates(snake.money, snake.totalMass);
+            // Money crates removed - money only comes from killing other snakes
 
             // Hide snake first, then clear data
             snakeVisibleRef.current = false;
@@ -2882,18 +2859,7 @@ export default function GamePage() {
       let cameraX = snake.head.x;
       let cameraY = snake.head.y;
       
-      // Apply world boundary constraints to camera
-      // This prevents the camera from going outside the world boundaries
-      const halfScreenWidth = (canvasSize.width / 2) / zoom;
-      const halfScreenHeight = (canvasSize.height / 2) / zoom;
-      
-      const maxCameraX = mapCenterX + mapRadius - halfScreenWidth;
-      const minCameraX = mapCenterX - mapRadius + halfScreenWidth;
-      const maxCameraY = mapCenterY + mapRadius - halfScreenHeight;
-      const minCameraY = mapCenterY - mapRadius + halfScreenHeight;
-      
-      cameraX = Math.max(minCameraX, Math.min(maxCameraX, cameraX));
-      cameraY = Math.max(minCameraY, Math.min(maxCameraY, cameraY));
+      // Camera follows snake perfectly - no constraints for consistent control feel
       
       // Debug: Log camera position (optional)
       // console.log(`Camera: (${cameraX.toFixed(1)}, ${cameraY.toFixed(1)}) | Snake: (${snake.head.x.toFixed(1)}, ${snake.head.y.toFixed(1)})`);
@@ -2904,11 +2870,11 @@ export default function GamePage() {
       // Apply camera transform: Center + Zoom + Offset
       ctx.translate(canvasSize.width / 2, canvasSize.height / 2);  // Center camera on screen
       ctx.scale(zoom, zoom);                                        // Apply zoom level
-      ctx.translate(-cameraX, -cameraY);                           // Follow snake (with boundary limits)
+      ctx.translate(-cameraX, -cameraY);                           // Follow snake perfectly
 
       // STEP 3: DRAW WORLD OBJECTS (all relative to camera position)
       // Now all world coordinates are transformed to screen coordinates
-      // Snake will appear centered on screen (unless at world boundaries)
+      // Snake will appear perfectly centered on screen everywhere
       // All other objects (food, enemies, etc.) render relative to camera offset
 
       // Draw overlay only outside the play area (death barrier region)
@@ -2985,42 +2951,19 @@ export default function GamePage() {
               ctx.fillText('$', drawX, drawY);
             }
           }
-          // Special rendering for super food - enhanced 2D with glow
+          // Regular rendering for super food - same as normal food
           else if (food.isSuperFood) {
-            // Enhanced glow effect for super food
+            // Simple 2D rendering like regular food
             ctx.shadowColor = food.color;
-            ctx.shadowBlur = 15;
+            ctx.shadowBlur = 8;
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
 
-            // Draw main circle with gradient
-            const gradient = ctx.createRadialGradient(
-              food.x - food.radius * 0.3, food.y - food.radius * 0.3, 0,
-              food.x, food.y, food.radius
-            );
-            gradient.addColorStop(0, food.color);
-            gradient.addColorStop(0.7, food.color);
-            gradient.addColorStop(1, 'rgba(255, 255, 255, 0.8)');
-            
-            ctx.fillStyle = gradient;
+            // Draw simple circle
+            ctx.fillStyle = food.color;
             ctx.beginPath();
             ctx.arc(food.x, food.y, food.radius, 0, Math.PI * 2);
             ctx.fill();
-
-            // Draw inner highlight circle for 2D effect
-            ctx.shadowBlur = 0;
-            const highlightRadius = food.radius * 0.5;
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            ctx.beginPath();
-            ctx.arc(food.x - food.radius * 0.3, food.y - food.radius * 0.3, highlightRadius, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Add outer ring for 2D effect
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(food.x, food.y, food.radius + 1, 0, Math.PI * 2);
-            ctx.stroke();
 
             // Reset shadow
             ctx.shadowBlur = 0;
@@ -3535,31 +3478,31 @@ export default function GamePage() {
             // Money text removed - no longer displaying above server players
             ctx.restore();
 
-            // Cash-out progress indicator above head
-            if (isCashingOut && cashOutProgress > 0) {
-              const barWidth = 50;
-              const barHeight = 8;
-              const barX = head.x - barWidth / 2;
-              const barY = head.y - cappedRadius - 30;
+            // Circular cash-out progress indicator above head
+            if (isCashingOut) {
+              // Position circle above the head - much smaller size
+              const circleRadius = cappedRadius * 0.5; // Much smaller circle
+              const circleY = head.y - cappedRadius - 15;
+              const lineWidth = 1;
 
-              // Background bar
-              ctx.fillStyle = 'rgba(0, 0, 0, 0.8)';
-              ctx.fillRect(barX, barY, barWidth, barHeight);
+              // Draw background circle - solid for visibility
+              ctx.beginPath();
+              ctx.arc(head.x, circleY, circleRadius, 0, Math.PI * 2);
+              ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; // White background for visibility
+              ctx.lineWidth = lineWidth;
+              ctx.stroke();
 
-              // Progress bar
-              ctx.fillStyle = '#ffd700';
-              ctx.fillRect(barX, barY, barWidth * cashOutProgress, barHeight);
-
-              // Border
-              ctx.strokeStyle = '#ffffff';
-              ctx.lineWidth = 2; // Thicker border for clear ridges
-              ctx.strokeRect(barX, barY, barWidth, barHeight);
-
-              // "CASHING OUT" text
-              ctx.fillStyle = '#ffd700';
-              ctx.font = 'bold 12px Arial';
-              ctx.textAlign = 'center';
-              ctx.fillText('CASHING OUT', head.x, barY - 8);
+              // Draw progress circle - solid for visibility (always show some progress when cashing out)
+              const displayProgress = Math.max(cashOutProgress, 0.02); // Always show at least 2% when cashing out
+              ctx.beginPath();
+              // Start from top (-Math.PI/2) and go clockwise
+              const startAngle = -Math.PI / 2;
+              const endAngle = startAngle + (displayProgress * Math.PI * 2);
+              ctx.arc(head.x, circleY, circleRadius, startAngle, endAngle);
+              ctx.strokeStyle = '#ffd700';
+              ctx.lineWidth = lineWidth + 1; // Thicker for visibility
+              ctx.lineCap = 'round';
+              ctx.stroke();
             }
           }
         }
@@ -3859,33 +3802,54 @@ export default function GamePage() {
         // Reset global alpha
         ctx.globalAlpha = 1.0;
 
-        // Draw cash-out progress bar above snake head (without money text)
+        // Draw circular cash-out progress indicator above balance box
         if (snake.visibleSegments.length > 0 && cashingOut) {
+          // Debug: Log rendering
+          if (Math.floor(cashOutProgress * 100) % 20 === 0) { // Log every 20%
+            console.log(`Rendering circle with progress: ${(cashOutProgress * 100).toFixed(1)}%`);
+          }
           const snakeHead = snake.visibleSegments[0];
 
-          // Cap the scaling at 4 mass equivalent
+          // Cap the scaling at 4 mass equivalent (same as balance box)
           const baseMass = 6; // Starting mass
-          const maxMass = 10; // Cap at 4 mass (starting at 6, so 6+4=10)
+          const maxMass = 10; // Cap at 10 mass
           const cappedMass = Math.min(snake.visibleSegments.length, maxMass);
           const scaleFactor = Math.max(0.8, cappedMass / baseMass);
 
-          const barWidth = 40 * scaleFactor; // Smaller width
-          const barHeight = 3 * scaleFactor; // Smaller height
-          const barX = snakeHead.x - barWidth / 2;
-          const barY = snakeHead.y - 20 * scaleFactor; // Position above snake head
+          // Calculate balance box dimensions (same as in balance box code)
+          const balanceText = `$${snake.money.toFixed(2)}`;
+          ctx.font = `bold ${6 * scaleFactor}px Arial`;
+          const textWidth = ctx.measureText(balanceText).width;
+          const boxPadding = 2 * scaleFactor;
+          const boxWidth = textWidth + boxPadding * 2;
+          const boxHeight = 8 * scaleFactor;
+          const boxY = snakeHead.y - 20 * scaleFactor;
 
-          // Background bar
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.5)';
-          ctx.fillRect(barX, barY, barWidth, barHeight);
+          // Position circle above the balance box - much smaller size (40% of box width)
+          const circleRadius = (boxWidth / 2) * 0.4;
+          const circleY = boxY - boxHeight - 4 * scaleFactor; // Closer to the box
+          const lineWidth = 1 * scaleFactor;
 
-          // Progress bar
-          ctx.fillStyle = '#53d493'; // Green progress
-          ctx.fillRect(barX, barY, barWidth * cashOutProgress, barHeight);
+          // Draw background circle - solid for visibility
+          ctx.beginPath();
+          ctx.arc(snakeHead.x, circleY, circleRadius, 0, Math.PI * 2);
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; // White background for visibility
+          ctx.lineWidth = lineWidth;
+          ctx.stroke();
 
-          // Border
-          ctx.strokeStyle = '#134242';
-          ctx.lineWidth = 1;
-          ctx.strokeRect(barX, barY, barWidth, barHeight);
+          // Draw progress circle - solid for visibility (always show some progress when cashing out)
+          // Use ref for most up-to-date progress value
+          const currentProgress = cashOutProgressRef.current;
+          const displayProgress = Math.max(currentProgress, 0.02); // Always show at least 2% when cashing out
+          ctx.beginPath();
+          // Start from top (-Math.PI/2) and go clockwise
+          const startAngle = -Math.PI / 2;
+          const endAngle = startAngle + (displayProgress * Math.PI * 2);
+          ctx.arc(snakeHead.x, circleY, circleRadius, startAngle, endAngle);
+          ctx.strokeStyle = '#22c55e'; // Bright green progress
+          ctx.lineWidth = lineWidth + 1; // Thicker for visibility
+          ctx.lineCap = 'round';
+          ctx.stroke();
         }
 
         // Draw bigger eyes like earthworm in image
@@ -3951,22 +3915,29 @@ export default function GamePage() {
           const boxX = snakeHead.x - boxWidth / 2;
           const boxY = snakeHead.y - 20 * scaleFactor; // Position above snake head
           
-          // Draw box background with dark semi-transparent background
+          // Draw rounded box background with dark semi-transparent background
           ctx.fillStyle = 'rgba(0, 0, 0, 0.85)';
-          ctx.fillRect(boxX, boxY, boxWidth, boxHeight);
+          const cornerRadius = 2 * scaleFactor;
+          ctx.beginPath();
+          ctx.roundRect(boxX, boxY, boxWidth, boxHeight, cornerRadius);
+          ctx.fill();
           
-          // Draw box border with yellow color to match the image
-          ctx.strokeStyle = '#FFD700'; // Yellow border like in the image
+          // Draw rounded box border with green color
+          ctx.strokeStyle = '#22c55e'; // Green border
           ctx.lineWidth = 0.5 * scaleFactor;
-          ctx.strokeRect(boxX, boxY, boxWidth, boxHeight);
+          ctx.beginPath();
+          ctx.roundRect(boxX, boxY, boxWidth, boxHeight, cornerRadius);
+          ctx.stroke();
           
           // Draw inner highlight for 2D effect
-          ctx.strokeStyle = 'rgba(255, 215, 0, 0.2)'; // Lighter yellow inner border
+          ctx.strokeStyle = 'rgba(34, 197, 94, 0.3)'; // Lighter green inner border
           ctx.lineWidth = 0.25 * scaleFactor;
-          ctx.strokeRect(boxX + 0.25, boxY + 0.25, boxWidth - 0.5, boxHeight - 0.5);
+          ctx.beginPath();
+          ctx.roundRect(boxX + 0.5, boxY + 0.5, boxWidth - 1, boxHeight - 1, cornerRadius - 0.5);
+          ctx.stroke();
           
-          // Draw balance text in yellow to match the image
-          ctx.fillStyle = '#FFD700'; // Yellow text like in the image
+          // Draw balance text in green
+          ctx.fillStyle = '#22c55e'; // Green text
           ctx.font = `bold ${6 * scaleFactor}px Arial`;
           ctx.textAlign = 'center';
           ctx.textBaseline = 'middle';
@@ -4172,18 +4143,13 @@ export default function GamePage() {
 
         {/* Betting Information */}
         {currentBetAmount > 0 && !cashOutCompleted && (
-          <div className="bg-black/80 border border-green-600 rounded px-4 py-3 shadow-lg">
+          <div className="bg-black/80 border-2 border-green-500 rounded-xl px-4 py-3 shadow-lg">
             <div className="text-green-400 text-sm font-mono text-right">
               Bet: ${currentBetAmount}
             </div>
             <div className="text-gray-300 text-xs font-mono text-right">
               Hold Wallet Active
             </div>
-            {gameStartTime && (
-              <div className="text-yellow-400 text-xs font-mono mt-1 text-right">
-                Multiplier: {Math.min(5, Math.max(0.5, (snake.totalMass / 10) * (Math.floor((Date.now() - gameStartTime) / 1000) / 60))).toFixed(2)}x
-              </div>
-            )}
           </div>
         )}
 
@@ -4193,7 +4159,7 @@ export default function GamePage() {
             <div className="text-blue-400 text-sm font-mono text-right">
               Current: ${snake.money.toFixed(2)}
             </div>
-            <div className="text-yellow-400 text-xs font-mono text-right">
+            <div className="text-green-400 text-xs font-mono text-right">
               Winnings: ${Math.max(0, snake.money - currentBetAmount).toFixed(2)}
             </div>
             <div className="text-gray-300 text-xs font-mono text-right mt-1">
@@ -4208,23 +4174,6 @@ export default function GamePage() {
         )}
       </div>
 
-      {/* Instructions */}
-      <div className="absolute bottom-4 left-4 z-10">
-        <div className="bg-black/80 border border-gray-700 rounded px-3 py-2 shadow-lg">
-          {/* <div className="text-white text-sm font-mono">Hold Q to cash out</div> */}
-          <div className="text-gray-300 text-sm font-mono">Left click to boost</div>
-          <div className="text-gray-300 text-sm font-mono">Press A for auto-play</div>
-          {autoPlay && (
-            <div className="text-cyan-400 text-sm font-mono mt-1 animate-pulse">🤖 AUTO-PLAY ACTIVE</div>
-          )}
-          {currentBetAmount > 0 && !cashOutCompleted && (
-            <>
-              <div className="text-green-400 text-sm font-mono mt-2">💰 Bet: ${currentBetAmount}</div>
-              <div className="text-yellow-400 text-xs font-mono">Survive longer for bigger winnings!</div>
-            </>
-          )}
-        </div>
-      </div>
 
 
 
@@ -4233,7 +4182,7 @@ export default function GamePage() {
           <div className="bg-dark-card/90 backdrop-blur-sm border border-dark-border rounded-lg p-8 text-center">
             <div className="text-green-500 text-4xl font-bold mb-4">Congratulations!</div>
             <div className="text-white text-2xl mb-2">PumpGames.Fun Cash Out!</div>
-            <div className="text-neon-yellow text-xl mb-6">${cashedOutAmount.toFixed(2)}</div>
+            <div className="text-green-400 text-xl mb-6">${cashedOutAmount.toFixed(2)}</div>
             <div className="flex gap-4">
               <Button
                 onClick={resetGame}
@@ -4257,7 +4206,7 @@ export default function GamePage() {
           <div className="bg-dark-card/90 backdrop-blur-sm border border-neon-green rounded-lg p-8 text-center">
             <div className="text-neon-green text-4xl font-bold mb-4">Congratulations!</div>
             <div className="text-white text-2xl mb-2">PumpGames.Fun Cash Out:</div>
-            <div className="text-neon-yellow text-3xl font-bold mb-6">${cashedOutAmount.toFixed(2)}</div>
+            <div className="text-green-400 text-3xl font-bold mb-6">${cashedOutAmount.toFixed(2)}</div>
             <div className="flex gap-4 justify-center">
               <Button
                 onClick={resetGame}

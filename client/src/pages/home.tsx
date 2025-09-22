@@ -692,19 +692,15 @@ export default function Home() {
     
     const betAmount = getEffectiveBetAmount();
     
-    // Calculate winnings based on score/time (simple formula for now)
-    // Minimum 0.5x, maximum 5x multiplier based on performance
-    const baseMultiplier = 0.5;
-    const scoreMultiplier = Math.min(score / 1000, 4.5); // Max 4.5x from score
-    const totalMultiplier = baseMultiplier + scoreMultiplier;
-    const winnings = betAmount * totalMultiplier;
+    // Fixed winnings - no multiplier system
+    const winnings = betAmount; // Return bet amount only
     
     try {
       await winBet(betAmount, winnings);
       
       toast({
         title: "🎉 You Won!",
-        description: `${totalMultiplier.toFixed(2)}x multiplier! Won $${winnings.toFixed(2)} + bet back!`,
+        description: `Won $${winnings.toFixed(2)} + bet back!`,
       });
     } catch (error) {
       console.error('Failed to process win:', error);

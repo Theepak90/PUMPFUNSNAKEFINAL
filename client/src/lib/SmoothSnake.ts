@@ -37,7 +37,7 @@ export class SmoothSnake {
     this.head = { x, y };
     this.currentAngle = 0;
     this.turnSpeed = 0.032; // Reduced by 20% (0.04 * 0.8) for smoother turning
-    this.baseSpeed = 1.08;
+    this.baseSpeed = 0.8;
     this.boostMultiplier = 1.8;
     this.speed = this.baseSpeed;
     this.isBoosting = false;
